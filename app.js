@@ -4,11 +4,9 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
-const testRouter = require('./routes/test');
+const routes = require('./routes');
 
 const app = express();
-const { driver } = require('./DBSession')
-// view engine setup
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -16,7 +14,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', testRouter);
+app.use('/', routes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -31,8 +29,7 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
-  driver.close()
+  res.json({ error: { status: err.status || 500, message: err.message } });
 });
 
 module.exports = app;
