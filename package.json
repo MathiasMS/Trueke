@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon ./bin/www"
+    "start": "nodemon ./bin/www",
+    "prettier": "prettier --config .prettierrc --write \"{.js,!(node)**/*.js}\""
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +20,7 @@
     "uuid": "^8.2.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "prettier": "^2.0.5"
   }
 }
