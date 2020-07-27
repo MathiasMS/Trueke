@@ -7,10 +7,8 @@ const router = express.Router()
 router.get('/', async function (req, res, next) {
   try {
     const result = await session.run(
-      `
-                MATCH (u:User)
-                RETURN u
-            `
+      `MATCH (i:Item)
+                  RETURN i`
     )
 
     const records = result.records
@@ -22,30 +20,12 @@ router.get('/', async function (req, res, next) {
   }
 })
 
-router.get('/:userId', async function (req, res, next) {
-  const { userId } = req.params
-  try {
-    const result = await session.run(
-      `
-           MATCH (u:User { id: "${userId}"})
-           RETURN u`
-    )
-
-    const singleRecord = result.records[0]
-    const node = singleRecord.get(0)
-
-    res.json(node.properties)
-  } catch (e) {
-    next(e)
-  }
-})
-
-router.get('/:id/item', async function (req, res, next) {
+router.get('/:id', async function (req, res, next) {
   const { id } = req.params
 
   try {
     const result = await session.run(
-      `MATCH (i:Item) <- [:OWNS] - (User {id: "${id}"})
+      `MATCH (i:Item { id: "${id}"})
               RETURN i`
     )
 
@@ -58,13 +38,38 @@ router.get('/:id/item', async function (req, res, next) {
   }
 })
 
+router.put('/', async function (req, res, next) {
+  const { name, description, image, itemId } = req.body
+
+  const query = `
+             MATCH (i:Item {id:"${itemId}"}) SET 
+             ${name ? `i.name = "${name}"` : ''}
+             ${description ? `i.description = "${description}"` : ''}
+             ${image ? `i.image = "${image}"` : ''}
+             return i
+            `
+  try {
+    const result = await session.run(query)
+
+    const singleRecord = result.records[0]
+    const node = singleRecord.get(0)
+
+    res.json(node.properties)
+  } catch (e) {
+    next(e)
+  }
+})
+
 router.post('/', async function (req, res, next) {
-  const { name, email } = req.body
+  const { name, description, image, userId } = req.body
+
   try {
     const result = await session.run(
       `
-            CREATE (u:User {name: "${name}", email: "${email}", id: "${uuidv4()}"})
-            RETURN u
+                MATCH (u:User)
+                WHERE u.id = "${userId}"
+                CREATE (i:Item {id: "${uuidv4()}", name: "${name}", description: "${description}", image: "${image}"}) <- [r:OWNS] - (u)
+                RETURN i
             `
     )
 
@@ -77,36 +82,15 @@ router.post('/', async function (req, res, next) {
   }
 })
 
-router.put('/:userId', async function (req, res, next) {
-  const { userId } = req.params
-  const { name, email } = req.body
-  try {
-    const result = await session.run(
-      `
-            MERGE (u:User {id: '${userId}'})
-            SET u.name = '${name}', u.email = '${email}'
-            RETURN u
-          `
-    )
-
-    const singleRecord = result.records[0]
-    const node = singleRecord.get(0)
-
-    res.json(node.properties)
-  } catch (e) {
-    next(e)
-  }
-})
-
-router.delete('/:userId', async function (req, res, next) {
-  const { userId } = req.params
+router.delete('/:id', async function (req, res, next) {
+  const { id } = req.params
 
   try {
     const result = await session.run(`
-                MATCH (u:User {id: "${userId}"})
-                OPTIONAL MATCH (u)-[r]-()
-                DELETE u, r
-                return u
+                MATCH (i:Item {id: "${id}"})
+                OPTIONAL MATCH (i)-[r]-()
+                DELETE i, r
+                return i
         `)
 
     if (result.summary.counters.containsUpdates()) {
