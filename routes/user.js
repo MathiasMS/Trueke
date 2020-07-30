@@ -59,12 +59,13 @@ router.get('/:id/item', async function (req, res, next) {
 })
 
 router.post('/', async function (req, res, next) {
-  const { name, email } = req.body
+  const { name, email, picture = '', id } = req.body
   try {
     const result = await session.run(
       `
-            CREATE (u:User {name: "${name}", email: "${email}", id: "${uuidv4()}"})
-            RETURN u
+            MERGE (u:User {id: "${id}"})
+            ON CREATE SET u.name = "${name}", u.email = "${email}", u.picture = "${picture}"
+            RETURN u;
             `
     )
 

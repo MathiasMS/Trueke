@@ -1,20 +1,50 @@
 const createError = require('http-errors')
+const cors = require('cors')
 const express = require('express')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 const logger = require('morgan')
+const jwt = require('express-jwt');
+const jwtAuthz = require('express-jwt-authz');
+const jwksRsa = require('jwks-rsa');
+
+// Authentication middleware. When used, the
+// Access Token must exist and be verified against
+// the Auth0 JSON Web Key Set
+const checkJwt = jwt({
+  // Dynamically provide a signing key
+  // based on the kid in the header and
+  // the signing keys provided by the JWKS endpoint.
+  secret: jwksRsa.expressJwtSecret({
+    cache: true,
+    rateLimit: true,
+    jwksRequestsPerMinute: 5,
+    jwksUri: `https://dev-lizyo13l.us.auth0.com/.well-known/jwks.json`
+  }),
+  
+  // Validate the audience and the issuer.
+  audience: 'https://dev-lizyo13l.us.auth0.com/api/v2/',
+  issuer: `https://dev-lizyo13l.us.auth0.com/`,
+  algorithms: ['RS256']
+});
 
 const routes = require('./routes')
 
 const app = express()
 
+app.use(cors())
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 
-app.use('/', routes)
+app.get('/ping', (req, res) => res.send('pong'))
+app.post('/test', (req, res, next) => {
+  console.log('body: ', req.body);
+  res.status(200).json(req.body)
+})
+app.use('/', checkJwt, routes)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
