@@ -40,10 +40,6 @@ app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 
 app.get('/ping', (req, res) => res.send('pong'))
-app.post('/test', (req, res, next) => {
-  console.log('body: ', req.body);
-  res.status(200).json(req.body)
-})
 app.use('/', checkJwt, routes)
 
 // catch 404 and forward to error handler
@@ -53,6 +49,7 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
+  console.log(err)
   // set locals, only providing error in development
   res.locals.message = err.message
   res.locals.error = req.app.get('env') === 'development' ? err : {}

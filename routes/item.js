@@ -42,7 +42,7 @@ router.put('/', async function (req, res, next) {
   const { name, description, image, itemId } = req.body
 
   const query = `
-             MATCH (i:Item {id:"${itemId}"}) SET 
+             MATCH (i:Item {id:"${itemId}"}) SET
              ${name ? `i.name = "${name}"` : ''}
              ${description ? `i.description = "${description}"` : ''}
              ${image ? `i.image = "${image}"` : ''}
@@ -61,14 +61,17 @@ router.put('/', async function (req, res, next) {
 })
 
 router.post('/', async function (req, res, next) {
-  const { name, description, image, userId } = req.body
-
+  const { title, description, images = [], quality, category } = req.body
+  const userId = req.user.sub
+  
   try {
     const result = await session.run(
       `
                 MATCH (u:User)
                 WHERE u.id = "${userId}"
-                CREATE (i:Item {id: "${uuidv4()}", name: "${name}", description: "${description}", image: "${image}"}) <- [r:OWNS] - (u)
+                CREATE (i:Item {id: "${uuidv4()}", title: "${title}", description: "${description}", category: "${category}", quality: "${quality}", images: [${images.map(
+        (img) => `"${img}"`
+      )}]}) <- [r:OWNS] - (u)
                 RETURN i
             `
     )
