@@ -4,3 +4,4 @@ const driver = neo4j.driver('bolt://localhost:7687', neo4j.auth.basic('neo4j', '
 
 module.exports.session = driver.session()
 module.exports.driver = driver
+
